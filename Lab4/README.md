@@ -1,4 +1,4 @@
-The fourth lab.
+The fourth lab. Assesment
 
 HAS: 
 Task 1 - swap function
@@ -32,3 +32,4 @@ Implement int* myMin(int *arr, int size) that returns a pointer to the smallest 
 Requirement: the call must be usable on the left side of an assignment.
 
 The program runs all MinUnit tests and demonstrates every implemented function
+
