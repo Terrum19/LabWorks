@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cl.exe - Build ALL files",
+            "type": "shell",
+            "command": "cmd.exe",
+            "args": [
+                "/c",
+                "cl.exe /Zi /EHsc /nologo /Fe:${workspaceFolderBasename}.exe **/*.cpp **/*.c"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
+    ]
+}
