@@ -176,22 +176,8 @@ int main(){
     for (int i = 0; i < sizeSecondArr; i++){
         secondDynArr[i] = rand() % 20;
     }
-    int insertionNumber;
-    int isDuplicate = 1;
-    while (isDuplicate){
-        duplicate:
-        scanf("%d", &insertionNumber);
-        for (int i = 0; i < sizeSecondArr; i++){
-            if (insertionNumber == secondDynArr[i]){
-                printf("Caught duplicate, retry.");
-                goto duplicate;
-            }
-        }
-        break;
-    }
-    secondDynArr = realloc(secondDynArr, sizeSecondArr * 2);
-    secondDynArr[sizeSecondArr + 1] = insertionNumber;
-    printIntArr(secondDynArr, sizeSecondArr * 2);
+    antiDuplicateAppend(secondDynArr, &sizeSecondArr);
+    printIntArr(secondDynArr, sizeSecondArr );
     // Задание 5. Рекурсивные функции.
     // 5a. Напишите рекурсивную функцию вычисления суммы первых N натуральных чисел
     printf("%d\n", sumRecursive(6));
