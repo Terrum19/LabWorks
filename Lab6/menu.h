@@ -1,12 +1,16 @@
-struct book
+#pragma once
+#define AUTHOR_LEN 25
+#define NAME_LEN 40
+#define CATEGORY_LEN 25
+
+struct Book
 {
-    char author[26];
-    char name[41];
+    char author[AUTHOR_LEN + 1];
+    char name[NAME_LEN + 1];
     short publishingYear;
     unsigned int price;
-    char category[26];
+    char category[CATEGORY_LEN + 1];
     char favorite;
-    char inUse;
 };
 
-void menu(struct book * library, int * librarySize, int * firstEmptyBook);
+void menu(struct Book * library, unsigned int librarySize, int * firstEmptyBook);

@@ -28,13 +28,13 @@ int main()
     // Задание 6.1. Создаем «картотеку» книг (структура Book из ЛР5).
     // «Картотека» - это массив структур => нужно такой массив создать.
     // Замечание: размер массива придется увеличивать по мере добавления книг
-    struct book library[50] = {{"Stanislaw Herman Lem", "The Invincible", 1964, 245, "Hard Sci-Fi", 1, 1},
-     {"Philip Kindred Dick", "Do androids dream of electric sheep?", 1968, 289, "Sci-Fi", 1, 1},
-     {"Hans H. Orberg", "Lingua latina per se illustrata", 1982, 1890, "Textbook", 1, 1},
-    {"Douglas Adams", "The Hitchhikers Guide to the Galaxy", 1979, 329, "Sci-Fi", 1, 1}};
+    struct Book library[50] = {{"Stanislaw Herman Lem", "The Invincible", 1964, 245, "Hard Sci-Fi", 1},
+     {"Philip Kindred Dick", "Do androids dream of electric sheep?", 1968, 289, "Sci-Fi", 1},
+     {"Hans H. Orberg", "Lingua latina per se illustrata", 1982, 1890, "Textbook", 1},
+    {"Douglas Adams", "The Hitchhikers Guide to the Galaxy", 1979, 329, "Sci-Fi", 1}};
     unsigned int librarySize = 50;
     int firstEmptyBook = 4;
-    menu(library, &librarySize, &firstEmptyBook);
+    menu(library, librarySize, &firstEmptyBook);
     // Пользователь должен иметь возможность выполнять
     // разные действия с картотекой => нужно такую возможность емус
     // предоставить: это может выглядеть как вывод "меню" (перечень
