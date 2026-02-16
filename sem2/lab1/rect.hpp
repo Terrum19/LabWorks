@@ -11,4 +11,10 @@ class Rect{
         upperBorderY = inpUpperBorderX;
         lowerBorderY = inpLowerBorderX;
     }
+    Rect(){
+        leftBorderX = 0;
+        rightBorderX = 0;
+        upperBorderY = 0;
+        lowerBorderY = 0;
+    }
 };
