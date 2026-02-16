@@ -85,7 +85,7 @@ int main()
      */
 
     {
-        Rect rect;
+        Rect rect; // Line 88 of "/home/terrum/Desktop/LabWorks/sem2/lab1/lab1.cpp" is at address 0x1131 <main()+8> but contains no code
     }
 
     /**
