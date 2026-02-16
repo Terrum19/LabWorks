@@ -42,7 +42,7 @@
  * компилятором и отладчиком.
  */
 
- 
+
 #include <iostream>
 #include "rect.hpp"
 
@@ -87,7 +87,8 @@ int main()
 
     {
         Rect rect; // Line 88 of "/home/terrum/Desktop/LabWorks/sem2/lab1/lab1.cpp" is at address 0x1131 <main()+8> but contains no code
-    }
+        // First default init
+    } // First Destructor
 
     /**
      * Задание 1.3. Явно определенные конструкторы. Конструктор по умолчанию.
@@ -103,8 +104,8 @@ int main()
      */
     
     {
-        Rect rect(1, 2, 3, 4);
-    }
+        Rect rect(1, 2, 3, 4); // First Init wgw
+    } // Second destructor
 
     /**
      * Задание 1.4. Конструктор копирования.
@@ -115,10 +116,10 @@ int main()
      */
 
     {
-        Rect rect1(1, 2, 3, 4);
-        Rect rect2 = rect1;
-        Rect rect3(rect1);
-    }
+        Rect rect1(1, 2, 3, 5); //Second init wgw
+        Rect rect2 = rect1; //First copying
+        Rect rect3(rect1); //Second copying
+    } // Destructors for rect3, rect2 and then rect1
 
     /**
      * Задание 1.5. Деструктор.
@@ -149,21 +150,26 @@ int main()
      * деструкторов и объясните это количество.
      */
 
-    /* {
-        Rect r1;
-        Rect *pR = new Rect(1,2,1,2);   
+    {
+        Rect r1; // Second default init
+        Rect *pR = new Rect(1,2,1,2); // Third init wgw
         {
-            Rect r2(r1);
-            Rect arRect[2];
+            Rect r2(r1); // Third copying
+            Rect arRect[2]; // Third default init, Fourth default init
             for(int i = 0; i < 3; i++)
             {
-                static Rect r3 (i,i,i,i) ;
-                Rect r4(*pR);
-                Rect r5(i,i,i,i);
-            }
+                static Rect r3 (i,i,i,i); // Fourth init wgw, initialised once (cuz static)
+                Rect r4(*pR); // i == 0: Fourth copying; i == 1: Fifth copying; i == 2: Sixth copying; 
+                Rect r5(i,i,i,i); // i == 0: Fifth init wgw; i == 1: Sixths init wgw; i == 3: seventh init wgw;
+            } 
+            // i == 0: Fifth inits destructor (r5), then Fourth copy destructor (r4)
+            // i == 1: Sixths inits destructor (r5), then Fifth copy destructor (r4)
+            // i == 2: Sevens inits destructor (r5), then Sixth copy destructor (r4)
         }
-        delete pR;  
-    } */
+        // Destructor for 4th def init (arRect[1]), for 5th (arRect[0])
+        // Destructor for third copying (r2)
+        delete pR; // Destructor for third init wgw
+    } // Destructor for second def init (r1), Destructor for foruth init wgw aka r3.
 
     /**
      * Задание 1.7. Публичные и приватные поля класса.
