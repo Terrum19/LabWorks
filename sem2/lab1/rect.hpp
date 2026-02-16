@@ -1,3 +1,5 @@
+#include <iostream>
+
 class Rect{
     public:
         int leftBorderX;
@@ -16,5 +18,8 @@ class Rect{
         rightBorderX = 0;
         upperBorderY = 0;
         lowerBorderY = 0;
+    }
+    ~Rect(){
+        std::cout << leftBorderX << " " << rightBorderX << " " << upperBorderY << " " << lowerBorderY << std::endl;
     }
 };
