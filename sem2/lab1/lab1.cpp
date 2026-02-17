@@ -46,6 +46,32 @@
 #include <iostream>
 #include "rect.hpp"
 
+void printRect(Rect &r){
+    for (int i = 0; i <= (r.getTop()-r.getBottom()); i++)
+    {
+        std::cout << "|";
+        if (i == 0 || i == (r.getTop()-r.getBottom())){
+            for (int j = 0; j <= (r.getRight() - r.getLeft()-2); j++){
+                std::cout << "-";
+            }
+        }
+        else{
+            for (int j = 0; j <= (r.getRight() - r.getLeft()-2); j++){
+                std::cout << " ";
+            }
+        }
+        std::cout << "|" << std::endl;
+    }
+        }
+
+Rect boundingRect(Rect r1, Rect r2){
+            int biggerTop = r1.getTop() < r2.getTop() ? r2.getTop() : r1.getTop();
+            int lesserLeft = r1.getLeft() < r2.getLeft() ? r1.getLeft() : r2.getLeft();
+            int biggerRight = r1.getRight() < r2.getRight() ? r2.getRight() : r1.getLeft();
+            int lowerBottom = r1.getBottom() < r2.getBottom() ? r1.getBottom() : r2.getBottom();
+            return Rect(lesserLeft, biggerRight, lowerBottom, biggerTop);
+        }
+
 int main()
 {
     /**
@@ -178,10 +204,13 @@ int main()
      * обратиться к полю напрямую. Объясните ошибку компиляции.
      */
 
-    /* {
-        Rect r1;
-        std::cout << r1.<имя_поля> << std::endl;
-    } */
+    // {
+    //     Rect r1;
+    //     std::cout << r1.leftBorderX << std::endl; 
+    // }
+        // Member is inaccessible because the lowerBorderY field is private
+        // Which means that it can only be accessed inside the class or its methods
+        // Incapsulation principle.
 
     /**
      * Задание 1.8. Инкапсуляция. Методы для доступа к объектам класса.
@@ -229,12 +258,12 @@ int main()
      * Продемонстрируйте работу этих методов ниже.
      */
 
-    /* {
+    {
        Rect r;
        std::cout << r.getLeft() << "; " << r.getRight() << '\n';
        r.setAll(1, 2, 3, 4);
        std::cout << r.getTop() << "; " << r.getBottom() << '\n';
-    } */
+    }
 
     /**
      * В литературе, особенно английской, методы часто называют
@@ -243,6 +272,9 @@ int main()
      * языков (Java, Python и др.).
      *
      * Напишите в комментариях, чем функция-член отличается от обычной функции.
+     * 
+     * Member functions are functions dedicated to a class, and can access classes members. Regular fucntions 
+     * Cannot access class members, unless they use an interface which allows them to do that. 
      */
 
     /**
@@ -263,6 +295,12 @@ int main()
      * - `rect.move(1)` перемещает прямоугольник на 1 по оси X.
      */
 
+     Rect rect;
+     rect.inflate(2);
+     std::cout << rect.getBottom() << std::endl;
+     rect.move(1, 3);
+     std::cout << rect.getBottom() << std::endl;
+
     /**
      * Задание 1.10. Передача объектов в функции и из функции.
      *
@@ -276,11 +314,14 @@ int main()
      * Какие конструкторы вызываются при выполнении кода в следующем блоке?
      */
 
-    /* {
-        Rect r1(...), r2(...);
-        Rect r3 = boundingRect(r1, r2);
+    {
+        Rect r1(1, 2, 3, 4), r2(4, 6, 8, 9); // Constructors wgv
+        Rect r3 = boundingRect(r1, r2); // Copying constructors. They're called because the 
+        // compiler copies given classess to bounding rect function. Check commit with tag 1.10boundRectRef
+        // to watch other type of behaviour.
+        // Copying constructors -> init wgv -> destructor for copied classess.
         printRect(r3);
-    } */
+    }
 
     /**
      * Задание 1.11. Поля объектов и свойства объектов.
