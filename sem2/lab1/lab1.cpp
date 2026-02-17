@@ -64,7 +64,7 @@ void printRect(Rect &r){
     }
         }
 
-Rect boundingRect(Rect r1, Rect r2){
+Rect boundingRect(Rect  & r1, Rect & r2){
             int biggerTop = r1.getTop() < r2.getTop() ? r2.getTop() : r1.getTop();
             int lesserLeft = r1.getLeft() < r2.getLeft() ? r1.getLeft() : r2.getLeft();
             int biggerRight = r1.getRight() < r2.getRight() ? r2.getRight() : r1.getLeft();
@@ -319,6 +319,11 @@ int main()
         Rect r3 = boundingRect(r1, r2); // Copying constructors. They're called because the 
         // compiler copies given classess to bounding rect function. Check commit with tag 1.10boundRectRef
         // to watch other type of behaviour.
+
+        // Commit 1.10boundRectRef: boundingRect now handles Rect classes not like (Rect r1, Rect r2)
+        // But as (Rect & r1, Rect & r2). This makes the copying of r1 r2 for usage in function redundant.
+        // To check the previous realisation, switch to commit with tag 1.10.
+
         // Copying constructors -> init wgv -> destructor for copied classess.
         printRect(r3);
     }
