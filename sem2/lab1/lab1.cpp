@@ -64,7 +64,7 @@ void printRect(Rect &r){
     }
         }
 
-Rect boundingRect(Rect  & r1, Rect & r2){
+Rect boundingRect(const Rect & r1, const Rect & r2){
             int biggerTop = r1.getTop() < r2.getTop() ? r2.getTop() : r1.getTop();
             int lesserLeft = r1.getLeft() < r2.getLeft() ? r1.getLeft() : r2.getLeft();
             int biggerRight = r1.getRight() < r2.getRight() ? r2.getRight() : r1.getLeft();

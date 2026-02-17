@@ -37,19 +37,19 @@ class Rect{
             lowerBorderY = other.lowerBorderY;
             std::cout << "Copying constructor called. Copying into " << this << " from " << &other << std::endl;
         }
-        void printBorders(){
+        void const printBorders() {
             std::cout << leftBorderX << " " << rightBorderX << " " << lowerBorderY << " " << upperBorderY << std::endl;
         }
-        int getLeft(){
-            return this->leftBorderX;
+        int getLeft() const {
+            return leftBorderX;
         }
-        int getRight(){
-            return this->rightBorderX;
+        int getRight() const{
+            return rightBorderX;
         }
-        int getTop(){
+        int getTop() const{
             return this->upperBorderY;
         }
-        int getBottom(){
+        int getBottom() const{
             return this->lowerBorderY;
         }
         void setAll(int rightBorderX, int leftBorderX, int lowerBorderY, int upperBorderY){
