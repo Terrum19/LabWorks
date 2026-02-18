@@ -349,7 +349,13 @@ int main()
      */
 
     {
-
+        Rect r1_11(1, 3, 4, 6);
+        r1_11.setHeight(5);
+        r1_11.setWidth(4);
+        printRect(r1_11);
+        int * widthHeigtSquare = r1_11.getSquare(); 
+        std::cout << "Width: " << widthHeigtSquare[0] << " Height: " << widthHeigtSquare[1] << " Square: " << widthHeigtSquare[2] << std::endl;
+        delete[] widthHeigtSquare;
     }
 
     /**

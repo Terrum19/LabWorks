@@ -86,4 +86,23 @@ class Rect{
             lowerBorderY += dY;
             upperBorderY += dY;
         }
+        int getWidth() const{
+            return getRight() - getLeft() + 1;
+        }
+        int getHeight() const {
+            return getTop() - getBottom() + 1;
+        } 
+        int * getSquare(){
+            int * widthHeightSquare = new int[3];
+            widthHeightSquare[0] = getWidth();
+            widthHeightSquare[1] = getHeight();
+            widthHeightSquare[2] = widthHeightSquare[0] * widthHeightSquare[1];
+            return widthHeightSquare;
+        }
+        void setWidth(int width){
+            rightBorderX = leftBorderX + width-1;
+        }
+        void setHeight(int height) {
+            upperBorderY = lowerBorderY + height -1;
+        }
 };
