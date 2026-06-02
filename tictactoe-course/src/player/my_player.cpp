@@ -7,10 +7,6 @@
 
 namespace ttt::my_player {
 
-struct Line {
-    std::vector<Point> cells;
-};
-
 // Генерация всех возможных линий длины L на поле rows*cols
 static std::vector<Line> generate_lines(int rows, int cols, int L) {
     std::vector<Line> lines;
@@ -47,8 +43,8 @@ static std::vector<Line> generate_lines(int rows, int cols, int L) {
     return lines;
 }
 
-// Ленивое кэширование линий для предотвращения TLE на больших полях
-static const std::vector<Line>& get_cached_lines(int rows, int cols, int L) {
+// Ленивое кэширование линий для предотвращения TLE (Time Limit Exceeded) на больших полях
+const std::vector<Line>& get_cached_lines(int rows, int cols, int L) {
     static int cached_rows = 0, cached_cols = 0, cached_L = 0;
     static std::vector<Line> cached_lines;
     
@@ -63,42 +59,20 @@ inline Sign get_opponent(Sign s) {
     return s == Sign::X ? Sign::O : Sign::X;
 }
 
-void MyPlayer::set_sign(Sign sign) { m_sign = sign; }
-const char* MyPlayer::get_name() const { return m_name; }
+// ---------------------------------------------------------------
+// Первичный анализ линий игрового поля
+// ---------------------------------------------------------------
+void analyze_lines(
+    const std::vector<Line>& lines,
+    const State& state,
+    Sign my_sign,
+    Sign opp_sign,
+    int L,
+    std::vector<LineInfo>& line_infos,
+    int& total_opp_winning_threats)
+{
+    total_opp_winning_threats = 0;
 
-Point MyPlayer::make_move(const State &state) {
-    const auto &opts = state.get_opts();
-    const int rows = opts.rows;
-    const int cols = opts.cols;
-    const int L = opts.win_len;
-    
-    const Sign my_sign = state.get_current_player();
-    const Sign opp_sign = get_opponent(my_sign);
-
-    const auto &lines = get_cached_lines(rows, cols, L);
-    
-    std::vector<Point> empty_cells;
-    empty_cells.reserve(rows * cols);
-    for (int y = 0; y < rows; ++y) {
-        for (int x = 0; x < cols; ++x) {
-            if (state.get_value(x, y) == Sign::NONE) {
-                empty_cells.push_back({x, y});
-            }
-        }
-    }
-
-    if (empty_cells.empty()) return {0, 0}; 
-
-    // Легковесная структура анализа линий без динамических векторов внутри
-    struct LineInfo {
-        int my = 0, opp = 0, empty = 0;
-        bool has_wall = false;
-    };
-    std::vector<LineInfo> line_infos(lines.size());
-
-    int total_opp_winning_threats = 0;
-
-    // Первичный легковесный анализ игрового поля
     for (size_t li = 0; li < lines.size(); ++li) {
         auto &info = line_infos[li];
         for (const auto &c : lines[li].cells) {
@@ -113,19 +87,21 @@ Point MyPlayer::make_move(const State &state) {
             total_opp_winning_threats++;
         }
     }
+}
 
-    // Таблица весов для позиционной эвристики
-    std::vector<int> weights(L + 1, 0);
-    weights[L] = 1'000'000;          
-    if (L > 1) weights[L - 1] = 50'000; 
-    for (int i = 1; i < L - 1; ++i) {
-        weights[i] = static_cast<int>(std::pow(10, i));
-    }
-
-    constexpr double DEF_COEFF = 0.85;
-
-    // Поиск победного хода с учётом асимметрии правил
-    Point best_tie_win_move = {-1, -1};
+// ---------------------------------------------------------------
+// Поиск победного хода с учётом асимметрии правил
+// ---------------------------------------------------------------
+Point find_winning_move(
+    const std::vector<Point>& empty_cells,
+    const std::vector<Line>& lines,
+    const std::vector<LineInfo>& line_infos,
+    Sign my_sign,
+    int L,
+    int total_opp_winning_threats,
+    Point& out_best_tie_win_move)
+{
+    out_best_tie_win_move = {-1, -1};
 
     for (const auto &p : empty_cells) {
         bool completes_my_line = false;
@@ -155,96 +131,126 @@ Point MyPlayer::make_move(const State &state) {
                 // Нолики побеждают немедленно и безусловно
                 return p;
             } else {
-                // Стратегия для крестиков проверяем, не приведёт ли ход к ничьей
+                // Стратегия для крестиков: проверяем, не приведёт ли ход к ничьей
                 int remaining_opp_threats = total_opp_winning_threats - opp_threats_blocked_by_p;
                 if (remaining_opp_threats == 0) {
                     // Чистая абсолютная победа для X т.к. у O нет шанса ответить
                     return p;
                 } else {
-                    // Этот ход даёт линию но O гарантированно закроет свою на последнем ходу что есть ничья
-                    if (best_tie_win_move.x == -1) best_tie_win_move = p;
+                    // Этот ход даёт линию, но O гарантированно закроет свою на последнем ходу — ничья
+                    if (out_best_tie_win_move.x == -1) out_best_tie_win_move = p;
                 }
             }
         }
     }
+    return {-1, -1};
+}
 
-    
-    // Блокирование немедленного проигрыша
-    if (total_opp_winning_threats > 0) {
-        Point best_blocking_move = {-1, -1};
-        int max_blocked = -1;
-        int min_dist = INT_MAX;
+// ---------------------------------------------------------------
+// Поиск лучшего блокирующего хода против угроз противника
+// ---------------------------------------------------------------
+Point find_blocking_move(
+    const std::vector<Point>& empty_cells,
+    const std::vector<Line>& lines,
+    const std::vector<LineInfo>& line_infos,
+    int L,
+    int rows, int cols,
+    int& out_max_blocked)
+{
+    Point best_blocking_move = {-1, -1};
+    int max_blocked = -1;
+    int min_dist = INT_MAX;
 
-        for (const auto &p : empty_cells) {
-            int blocked_here = 0;
-            for (size_t li = 0; li < lines.size(); ++li) {
-                if (line_infos[li].has_wall || line_infos[li].my > 0 || line_infos[li].opp != L - 1) continue;
-                
-                for (const auto &c : lines[li].cells) {
-                    if (c.x == p.x && c.y == p.y) { blocked_here++; break; }
-                }
+    for (const auto &p : empty_cells) {
+        int blocked_here = 0;
+        for (size_t li = 0; li < lines.size(); ++li) {
+            if (line_infos[li].has_wall || line_infos[li].my > 0 || line_infos[li].opp != L - 1) continue;
+            
+            for (const auto &c : lines[li].cells) {
+                if (c.x == p.x && c.y == p.y) { blocked_here++; break; }
             }
+        }
 
-            if (blocked_here > max_blocked) {
-                max_blocked = blocked_here;
+        if (blocked_here > max_blocked) {
+            max_blocked = blocked_here;
+            best_blocking_move = p;
+            min_dist = std::max(std::abs(p.x - cols / 2), std::abs(p.y - rows / 2));
+        } else if (blocked_here == max_blocked && max_blocked > 0) {
+            // Расстояние Чебышёва для защиты центра при равном блоке
+            int dist = std::max(std::abs(p.x - cols / 2), std::abs(p.y - rows / 2));
+            if (dist < min_dist) {
                 best_blocking_move = p;
-                min_dist = std::max(std::abs(p.x - cols / 2), std::abs(p.y - rows / 2));
-            } else if (blocked_here == max_blocked && max_blocked > 0) {
-                // Расстояние Чебышёва для защиты центра при равном блоке
-                int dist = std::max(std::abs(p.x - cols / 2), std::abs(p.y - rows / 2));
-                if (dist < min_dist) {
-                    best_blocking_move = p;
-                    min_dist = dist;
-                }
+                min_dist = dist;
             }
-        }
-
-        // Стратегический выбор: если мы можем заблокировать ВСЕ угрозы противника, 
-        // лучше продолжить игру ради чистой победы, чем соглашаться на ничью через best_tie_win_move.
-        if (max_blocked == total_opp_winning_threats && best_blocking_move.x != -1) {
-            return best_blocking_move;
-        }
-        // Если у противника двойная вилка на победу т.е нельзя заблокировать всё разом
-        // но у нас есть ход, сводящий игру в гарантированную ничью - берём ничью.
-        if (best_tie_win_move.x != -1) {
-            return best_tie_win_move;
-        }
-        // В худшем случае блокируем максимум возможного
-        if (best_blocking_move.x != -1) {
-            return best_blocking_move;
         }
     }
 
-    // Поиск и построение собственных вилок 
-    if (total_opp_winning_threats == 0) {
-        Point best_fork_move = {-1, -1};
-        int min_fork_dist = INT_MAX;
+    out_max_blocked = max_blocked;
+    return best_blocking_move;
+}
 
-        for (const auto &p : empty_cells) {
-            int created_threats = 0;
-            for (size_t li = 0; li < lines.size(); ++li) {
-                const auto &info = line_infos[li];
-                if (info.has_wall || info.opp > 0 || info.my != L - 2) continue;
+// ---------------------------------------------------------------
+// Поиск и построение собственных вилок (две угрозы за один ход)
+// ---------------------------------------------------------------
+Point find_fork_move(
+    const std::vector<Point>& empty_cells,
+    const std::vector<Line>& lines,
+    const std::vector<LineInfo>& line_infos,
+    int L,
+    int rows, int cols)
+{
+    Point best_fork_move = {-1, -1};
+    int min_fork_dist = INT_MAX;
 
-                for (const auto &c : lines[li].cells) {
-                    if (c.x == p.x && c.y == p.y) { created_threats++; break; }
-                }
-            }
+    for (const auto &p : empty_cells) {
+        int created_threats = 0;
+        for (size_t li = 0; li < lines.size(); ++li) {
+            const auto &info = line_infos[li];
+            if (info.has_wall || info.opp > 0 || info.my != L - 2) continue;
 
-            if (created_threats >= 2) {
-                int dist = std::max(std::abs(p.x - cols / 2), std::abs(p.y - rows / 2));
-                if (best_fork_move.x == -1 || dist < min_fork_dist) {
-                    best_fork_move = p;
-                    min_fork_dist = dist;
-                }
+            for (const auto &c : lines[li].cells) {
+                if (c.x == p.x && c.y == p.y) { created_threats++; break; }
             }
         }
-        if (best_fork_move.x != -1) return best_fork_move;
-    }
 
-    // Позиционная оценка 
-    std::vector<int> atk(rows * cols, 0);
-    std::vector<int> def(rows * cols, 0);
+        if (created_threats >= 2) {
+            int dist = std::max(std::abs(p.x - cols / 2), std::abs(p.y - rows / 2));
+            if (best_fork_move.x == -1 || dist < min_fork_dist) {
+                best_fork_move = p;
+                min_fork_dist = dist;
+            }
+        }
+    }
+    return best_fork_move;
+}
+
+// ---------------------------------------------------------------
+// Построение таблицы весов для позиционной эвристики
+// ---------------------------------------------------------------
+void build_weights_table(int L, std::vector<int>& weights) {
+    weights.assign(L + 1, 0);
+    weights[L] = 1'000'000;
+    if (L > 1) weights[L - 1] = 50'000;
+    for (int i = 1; i < L - 1; ++i) {
+        weights[i] = static_cast<int>(std::pow(10, i));
+    }
+}
+
+// ---------------------------------------------------------------
+// Накопление весов атаки и защиты для позиционной оценки
+// ---------------------------------------------------------------
+void accumulate_positional_scores(
+    const std::vector<Line>& lines,
+    const std::vector<LineInfo>& line_infos,
+    const State& state,
+    const std::vector<int>& weights,
+    int rows, int cols,
+    int L,
+    std::vector<int>& atk,
+    std::vector<int>& def)
+{
+    atk.assign(rows * cols, 0);
+    def.assign(rows * cols, 0);
 
     for (size_t li = 0; li < lines.size(); ++li) {
         const auto &info = line_infos[li];
@@ -269,21 +275,31 @@ Point MyPlayer::make_move(const State &state) {
             }
         }
     }
+}
 
-    // Выбор лучшей клетки по сумме весов
+// ---------------------------------------------------------------
+// Выбор лучшей клетки по сумме взвешенных атакующих/защитных весов
+// ---------------------------------------------------------------
+Point select_best_cell(
+    const std::vector<Point>& empty_cells,
+    const std::vector<int>& atk,
+    const std::vector<int>& def,
+    double def_coeff,
+    int rows, int cols)
+{
     Point best_move = empty_cells[0];
     long long best_score = LLONG_MIN;
 
     for (const auto &p : empty_cells) {
         int idx = p.y * cols + p.x;
         long long score = static_cast<long long>(atk[idx]) + 
-                          static_cast<long long>(DEF_COEFF * def[idx]);
+                          static_cast<long long>(def_coeff * def[idx]);
 
         if (score > best_score) {
             best_score = score;
             best_move = p;
         } else if (score == best_score) {
-            // Метрика Чебышёва для оценки близости к геометрическому центру поля
+            // Метрика Чебышёва для близости к центру поля
             int dist_new = std::max(std::abs(p.x - cols / 2), std::abs(p.y - rows / 2));
             int dist_best = std::max(std::abs(best_move.x - cols / 2), std::abs(best_move.y - rows / 2));
             if (dist_new < dist_best) {
@@ -291,8 +307,71 @@ Point MyPlayer::make_move(const State &state) {
             }
         }
     }
-
     return best_move;
+}
+
+void MyPlayer::set_sign(Sign sign) { m_sign = sign; }
+const char* MyPlayer::get_name() const { return m_name; }
+
+Point MyPlayer::make_move(const State &state) {
+    const auto &opts = state.get_opts();
+    const int rows = opts.rows;
+    const int cols = opts.cols;
+    const int L = opts.win_len;
+    
+    const Sign my_sign = state.get_current_player();
+    const Sign opp_sign = get_opponent(my_sign);
+
+    const auto &lines = get_cached_lines(rows, cols, L);
+    
+    // Сбор пустых клеток
+    std::vector<Point> empty_cells;
+    empty_cells.reserve(rows * cols);
+    for (int y = 0; y < rows; ++y)
+        for (int x = 0; x < cols; ++x)
+            if (state.get_value(x, y) == Sign::NONE)
+                empty_cells.push_back({x, y});
+    if (empty_cells.empty()) return {0, 0};
+
+    // Анализ линий
+    std::vector<LineInfo> line_infos(lines.size());
+    int total_opp_winning_threats = 0;
+    analyze_lines(lines, state, my_sign, opp_sign, L, line_infos, total_opp_winning_threats);
+
+    // Веса для позиционной оценки
+    std::vector<int> weights;
+    build_weights_table(L, weights);
+    constexpr double DEF_COEFF = 0.85;
+
+    // Шаг 1: победный ход
+    Point best_tie_win_move = {-1, -1};
+    {
+        Point wm = find_winning_move(empty_cells, lines, line_infos,
+                                     my_sign, L, total_opp_winning_threats,
+                                     best_tie_win_move);
+        if (wm.x != -1) return wm;
+    }
+
+    // Шаг 2: блокирование
+    if (total_opp_winning_threats > 0) {
+        int max_blocked = -1;
+        Point bm = find_blocking_move(empty_cells, lines, line_infos,
+                                      L, rows, cols, max_blocked);
+        if (max_blocked == total_opp_winning_threats && bm.x != -1) return bm;
+        if (best_tie_win_move.x != -1) return best_tie_win_move;
+        if (bm.x != -1) return bm;
+    }
+
+    // Шаг 3: вилки
+    if (total_opp_winning_threats == 0) {
+        Point fm = find_fork_move(empty_cells, lines, line_infos, L, rows, cols);
+        if (fm.x != -1) return fm;
+    }
+
+    // Шаг 4: позиционная оценка
+    std::vector<int> atk, def;
+    accumulate_positional_scores(lines, line_infos, state, weights, rows, cols, L, atk, def);
+    return select_best_cell(empty_cells, atk, def, DEF_COEFF, rows, cols);
 }
 
 } // namespace ttt::my_player
