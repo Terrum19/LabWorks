@@ -1,9 +1,11 @@
+#pragma once
 #define M 4
 
 void swap(int *a, int *b);
 int myMinStatic(int ar[][M], int rows, int cols);
 int myMinDynamic(int **ar, int rows, int cols);
 int myStrCmp(const char *a, const char *b);
+int * antiDuplicateAppend(int * sizeSecondArr, int * secondDynArr);
 void printIntArr(int * arr, size_t size);
 int fibRecursive(int n);
 int sumRecursive(int n);

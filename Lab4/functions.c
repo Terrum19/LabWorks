@@ -1,9 +1,8 @@
-#pragma once
-#include "functions.h"
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include "functions.h"
 void swap(int *a, int *b)
     {
         int temp;
@@ -11,6 +10,26 @@ void swap(int *a, int *b)
         *a = *b;
         *b = temp;
     }
+
+int * antiDuplicateAppend(int * secondDynArr, int * sizeSecondArr){
+    int insertionNumber;
+    int retryScan = 1;
+    while (retryScan){
+        scanf("%d", &insertionNumber);
+        retryScan = 0;
+        for (int i = 0; i < (*sizeSecondArr); i++){
+            if (insertionNumber == secondDynArr[i]){
+                printf("Caught duplicate, retry.");
+                retryScan = 1;
+                break;
+            }
+        }
+    }
+    secondDynArr = realloc(secondDynArr, (*sizeSecondArr)+1);
+    secondDynArr[(*sizeSecondArr) + 1] = insertionNumber;
+    (*sizeSecondArr) += 1;
+    return secondDynArr;
+}
 
 int myMinStatic(int ar[][M], int rows, int cols) {
     int min = INT_MAX;
